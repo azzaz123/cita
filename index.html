@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin - Citas Extranjería</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      font-family: Arial, sans-serif; 
+      background: #0f172a; 
+      color: #e2e8f0; 
+    }
+    
+    .container { 
+      max-width: 1400px; 
+      margin: 0 auto; 
+      padding: 20px; 
+    }
+    
+    .header { 
+      background: #1e293b; 
+      padding: 20px; 
+      border-radius: 10px; 
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .header h1 { 
+      color: #f59e0b; 
+      font-size: 24px; 
+    }
+    
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    
+    .btn-primary { background: #3b82f6; color: white; }
+    .btn-success { background: #22c55e; color: white; }
+    .btn-warning { background: #f59e0b; color: black; }
+    .btn-danger { background: #ef4444; color: white; }
+    
+    .filtros {
+      background: #1e293b;
+      padding: 20px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+    }
+    
+    .filtro-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    
+    .filtro-group label {
+      font-size: 12px;
+      color: #94a3b8;
+    }
+    
+    .filtro-group input,
+    .filtro-group select {
+      padding: 8px;
+      border: 1px solid #334155;
+      border-radius: 5px;
+      background: #0f172a;
+      color: #e2e8f0;
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #1e293b;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    
+    th {
+      background: #334155;
+      padding: 12px;
+      text-align: left;
+      font-size: 12px;
+      color: #f59e0b;
+    }
+    
+    td {
+      padding: 10px 12px;
+      border-bottom: 1px solid #334155;
+      font-size: 13px;
+    }
+    
+    tr:hover {
+      background: #334155;
+    }
+    
+    .badge {
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+    }
+    
+    .badge-pendiente { background: #f59e0b33; color: #f59e0b; }
+    .badge-completada { background: #22c55e33; color: #22c55e; }
+    
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+    
+    .stat-card {
+      background: #1e293b;
+      padding: 20px;
+      border-radius: 10px;
+      text-align: center;
+    }
+    
+    .stat-card .number {
+      font-size: 36px;
+      font-weight: bold;
+      color: #f59e0b;
+    }
+    
+    .stat-card .label {
+      font-size: 14px;
+      color: #94a3b8;
+    }
+    
+    .login-form {
+      max-width: 400px;
+      margin: 100px auto;
+      background: #1e293b;
+      padding: 30px;
+      border-radius: 10px;
+    }
+    
+    .login-form input {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border: 1px solid #334155;
+      border-radius: 5px;
+      background: #0f172a;
+      color: #e2e8f0;
+    }
+    
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.8);
+      justify-content: center;
+      align-items: center;
+    }
+    
+    .modal.active {
+      display: flex;
+    }
+    
+    .modal-content {
+      background: #1e293b;
+      padding: 30px;
+      border-radius: 10px;
+      max-width: 600px;
+      width: 90%;
+    }
+  </style>
+</head>
+<body>
+  <!-- LOGIN -->
+  <div id="login" class="login-form">
+    <h2 style="color: #f59e0b; text-align: center;">🔐 Admin - Citas Extranjería</h2>
+    <input type="email" id="email" placeholder="Email" value="admin@citas.com">
+    <input type="password" id="password" placeholder="Contraseña">
+    <button class="btn btn-primary" onclick="login()" style="width:100%; margin-top:10px;">
+      Entrar
+    </button>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="dashboard" class="container" style="display:none;">
+    <div class="header">
+      <h1>📊 Panel de Administración</h1>
+      <button class="btn btn-danger" onclick="logout()">Cerrar Sesión</button>
+    </div>
+
+    <div class="stats">
+      <div class="stat-card">
+        <div class="number" id="totalCitas">0</div>
+        <div class="label">Total Citas</div>
+      </div>
+      <div class="stat-card">
+        <div class="number" id="pendientes">0</div>
+        <div class="label">Pendientes</div>
+      </div>
+      <div class="stat-card">
+        <div class="number" id="completadas">0</div>
+        <div class="label">Completadas</div>
+      </div>
+    </div>
+
+    <div class="filtros">
+      <div class="filtro-group">
+        <label>Provincia</label>
+        <input type="text" id="fProvincia" placeholder="Madrid, Barcelona...">
+      </div>
+      <div class="filtro-group">
+        <label>Fecha Desde</label>
+        <input type="date" id="fFechaDesde">
+      </div>
+      <div class="filtro-group">
+        <label>Fecha Hasta</label>
+        <input type="date" id="fFechaHasta">
+      </div>
+      <div class="filtro-group">
+        <label>Estado</label>
+        <select id="fEstado">
+          <option value="">Todos</option>
+          <option value="pendiente">Pendiente</option>
+          <option value="completada">Completada</option>
+        </select>
+      </div>
+      <div class="filtro-group">
+        <label>NIE</label>
+        <input type="text" id="fNIE" placeholder="X1234567L">
+      </div>
+      <div class="filtro-group">
+        <label>Titular</label>
+        <input type="text" id="fTitular" placeholder="Nombre...">
+      </div>
+      <div class="filtro-group">
+        <label>Mes</label>
+        <select id="fMes">
+          <option value="">Todos</option>
+          <option value="1">Enero</option>
+          <option value="2">Febrero</option>
+          <option value="3">Marzo</option>
+          <option value="4">Abril</option>
+          <option value="5">Mayo</option>
+          <option value="6">Junio</option>
+          <option value="7">Julio</option>
+          <option value="8">Agosto</option>
+          <option value="9">Septiembre</option>
+          <option value="10">Octubre</option>
+          <option value="11">Noviembre</option>
+          <option value="12">Diciembre</option>
+        </select>
+      </div>
+      <div class="filtro-group">
+        <label>Año</label>
+        <input type="number" id="fAnio" placeholder="2024" value="2024">
+      </div>
+      <div class="filtro-group" style="justify-content: flex-end;">
+        <button class="btn btn-primary" onclick="buscarCitas()">🔍 Buscar</button>
+        <button class="btn btn-warning" onclick="limpiarFiltros()" style="margin-top:5px;">Limpiar</button>
+      </div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Justificante</th>
+          <th>Titular</th>
+          <th>NIE</th>
+          <th>Oficina</th>
+          <th>Provincia</th>
+          <th>Fecha Cita</th>
+          <th>Hora</th>
+          <th>Mesa</th>
+          <th>Caducidad</th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="tablaCitas"></tbody>
+    </table>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://mburmzxabmrvkehlstxk.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1idXJtenhhYm1ydmtlaGxzdHhrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5MTk2NDAsImV4cCI6MjA5NTQ5NTY0MH0.9ivUMmRL0EfybZb_Iszx7kxvJfFyVi7whlgQCN-_YzI';
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    let sesionActiva = false;
+
+    // Login
+    async function login() {
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+
+      const { data, error } = await supabase
+        .from('admins')
+        .select()
+        .eq('email', email)
+        .single();
+
+      if (data && data.password_hash === password) {
+        sesionActiva = true;
+        document.getElementById('login').style.display = 'none';
+        document.getElementById('dashboard').style.display = 'block';
+        cargarCitas();
+        cargarEstadisticas();
+      } else {
+        alert('Credenciales inválidas');
+      }
+    }
+
+    function logout() {
+      sesionActiva = false;
+      document.getElementById('login').style.display = 'block';
+      document.getElementById('dashboard').style.display = 'none';
+    }
+
+    // Cargar citas
+    async function cargarCitas(filtros = {}) {
+      let query = supabase
+        .from('citas')
+        .select('*')
+        .order('fecha_creacion', { ascending: false });
+
+      if (filtros.provincia) query = query.ilike('provincia', `%${filtros.provincia}%`);
+      if (filtros.fechaDesde) query = query.gte('fecha_cita', filtros.fechaDesde);
+      if (filtros.fechaHasta) query = query.lte('fecha_cita', filtros.fechaHasta);
+      if (filtros.estado) query = query.eq('estado', filtros.estado);
+      if (filtros.nie) query = query.ilike('nie', `%${filtros.nie}%`);
+      if (filtros.titular) query = query.ilike('titular', `%${filtros.titular}%`);
+
+      const { data, error } = await query;
+
+      if (data) {
+        renderTabla(data);
+      }
+    }
+
+    function renderTabla(citas) {
+      const tbody = document.getElementById('tablaCitas');
+      tbody.innerHTML = citas.map(c => `
+        <tr>
+          <td><strong>${c.justificante}</strong></td>
+          <td>${c.titular}</td>
+          <td>${c.nie}</td>
+          <td>${c.oficina}</td>
+          <td>${c.provincia}</td>
+          <td>${c.fecha_cita}</td>
+          <td>${c.hora_cita}</td>
+          <td>${c.mesa || '-'}</td>
+          <td>${c.caducidad || '-'}</td>
+          <td><span class="badge badge-${c.estado}">${c.estado}</span></td>
+          <td>
+            <button class="btn btn-success btn-sm" onclick="cambiarEstado('${c.id}', 'completada')">✓</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    async function cambiarEstado(id, estado) {
+      await supabase.from('citas').update({ estado }).eq('id', id);
+      buscarCitas();
+      cargarEstadisticas();
+    }
+
+    async function cargarEstadisticas() {
+      const { data, error } = await supabase.from('citas').select('estado');
+      
+      if (data) {
+        document.getElementById('totalCitas').textContent = data.length;
+        document.getElementById('pendientes').textContent = 
+          data.filter(c => c.estado === 'pendiente').length;
+        document.getElementById('completadas').textContent = 
+          data.filter(c => c.estado === 'completada').length;
+      }
+    }
+
+    function buscarCitas() {
+      const filtros = {
+        provincia: document.getElementById('fProvincia').value,
+        fechaDesde: document.getElementById('fFechaDesde').value,
+        fechaHasta: document.getElementById('fFechaHasta').value,
+        estado: document.getElementById('fEstado').value,
+        nie: document.getElementById('fNIE').value,
+        titular: document.getElementById('fTitular').value,
+      };
+      cargarCitas(filtros);
+    }
+
+    function limpiarFiltros() {
+      document.querySelectorAll('.filtros input, .filtros select').forEach(el => el.value = '');
+      cargarCitas();
+    }
+  </script>
+</body>
+</html>
