@@ -2,414 +2,112 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin - Citas Extranjería</title>
+  <title>Test Login</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { 
-      font-family: Arial, sans-serif; 
-      background: #0f172a; 
-      color: #e2e8f0; 
-    }
-    
-    .container { 
-      max-width: 1400px; 
-      margin: 0 auto; 
-      padding: 20px; 
-    }
-    
-    .header { 
-      background: #1e293b; 
-      padding: 20px; 
-      border-radius: 10px; 
-      margin-bottom: 20px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    
-    .header h1 { 
-      color: #f59e0b; 
-      font-size: 24px; 
-    }
-    
-    .btn {
-      padding: 10px 20px;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      font-weight: bold;
-    }
-    
-    .btn-primary { background: #3b82f6; color: white; }
-    .btn-success { background: #22c55e; color: white; }
-    .btn-warning { background: #f59e0b; color: black; }
-    .btn-danger { background: #ef4444; color: white; }
-    
-    .filtros {
-      background: #1e293b;
-      padding: 20px;
-      border-radius: 10px;
-      margin-bottom: 20px;
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 15px;
-    }
-    
-    .filtro-group {
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-    }
-    
-    .filtro-group label {
-      font-size: 12px;
-      color: #94a3b8;
-    }
-    
-    .filtro-group input,
-    .filtro-group select {
-      padding: 8px;
-      border: 1px solid #334155;
-      border-radius: 5px;
-      background: #0f172a;
-      color: #e2e8f0;
-    }
-    
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      background: #1e293b;
-      border-radius: 10px;
-      overflow: hidden;
-    }
-    
-    th {
-      background: #334155;
-      padding: 12px;
-      text-align: left;
-      font-size: 12px;
-      color: #f59e0b;
-    }
-    
-    td {
-      padding: 10px 12px;
-      border-bottom: 1px solid #334155;
-      font-size: 13px;
-    }
-    
-    tr:hover {
-      background: #334155;
-    }
-    
-    .badge {
-      padding: 4px 8px;
-      border-radius: 12px;
-      font-size: 11px;
-    }
-    
-    .badge-pendiente { background: #f59e0b33; color: #f59e0b; }
-    .badge-completada { background: #22c55e33; color: #22c55e; }
-    
-    .stats {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 15px;
-      margin-bottom: 20px;
-    }
-    
-    .stat-card {
-      background: #1e293b;
-      padding: 20px;
-      border-radius: 10px;
-      text-align: center;
-    }
-    
-    .stat-card .number {
-      font-size: 36px;
-      font-weight: bold;
-      color: #f59e0b;
-    }
-    
-    .stat-card .label {
-      font-size: 14px;
-      color: #94a3b8;
-    }
-    
-    .login-form {
-      max-width: 400px;
-      margin: 100px auto;
-      background: #1e293b;
-      padding: 30px;
-      border-radius: 10px;
-    }
-    
-    .login-form input {
-      width: 100%;
-      padding: 12px;
-      margin: 10px 0;
-      border: 1px solid #334155;
-      border-radius: 5px;
-      background: #0f172a;
-      color: #e2e8f0;
-    }
-
-    .error-msg {
-      color: #ef4444;
-      text-align: center;
-      margin-top: 10px;
-      display: none;
-    }
-  </style>
 </head>
-<body>
-  <!-- LOGIN -->
-  <div id="login" class="login-form">
-    <h2 style="color: #f59e0b; text-align: center;">🔐 Admin - Citas Extranjería</h2>
-    <input type="email" id="email" placeholder="Email" value="admin@citas.com">
-    <input type="password" id="password" placeholder="Contraseña" value="admin">
-    <button class="btn btn-primary" onclick="login()" style="width:100%; margin-top:10px;">
-      Entrar
-    </button>
-    <p id="errorMsg" class="error-msg">❌ Credenciales incorrectas</p>
-  </div>
-
-  <!-- DASHBOARD -->
-  <div id="dashboard" class="container" style="display:none;">
-    <div class="header">
-      <h1>📊 Panel de Administración</h1>
-      <button class="btn btn-danger" onclick="logout()">Cerrar Sesión</button>
-    </div>
-
-    <div class="stats">
-      <div class="stat-card">
-        <div class="number" id="totalCitas">0</div>
-        <div class="label">Total Citas</div>
-      </div>
-      <div class="stat-card">
-        <div class="number" id="pendientes">0</div>
-        <div class="label">Pendientes</div>
-      </div>
-      <div class="stat-card">
-        <div class="number" id="completadas">0</div>
-        <div class="label">Completadas</div>
-      </div>
-    </div>
-
-    <div class="filtros">
-      <div class="filtro-group">
-        <label>Provincia</label>
-        <input type="text" id="fProvincia" placeholder="Madrid, Barcelona...">
-      </div>
-      <div class="filtro-group">
-        <label>Fecha Desde</label>
-        <input type="date" id="fFechaDesde">
-      </div>
-      <div class="filtro-group">
-        <label>Fecha Hasta</label>
-        <input type="date" id="fFechaHasta">
-      </div>
-      <div class="filtro-group">
-        <label>Estado</label>
-        <select id="fEstado">
-          <option value="">Todos</option>
-          <option value="pendiente">Pendiente</option>
-          <option value="completada">Completada</option>
-        </select>
-      </div>
-      <div class="filtro-group">
-        <label>NIE</label>
-        <input type="text" id="fNIE" placeholder="X1234567L">
-      </div>
-      <div class="filtro-group">
-        <label>Titular</label>
-        <input type="text" id="fTitular" placeholder="Nombre...">
-      </div>
-      <div class="filtro-group">
-        <label>Mes</label>
-        <select id="fMes">
-          <option value="">Todos</option>
-          <option value="1">Enero</option>
-          <option value="2">Febrero</option>
-          <option value="3">Marzo</option>
-          <option value="4">Abril</option>
-          <option value="5">Mayo</option>
-          <option value="6">Junio</option>
-          <option value="7">Julio</option>
-          <option value="8">Agosto</option>
-          <option value="9">Septiembre</option>
-          <option value="10">Octubre</option>
-          <option value="11">Noviembre</option>
-          <option value="12">Diciembre</option>
-        </select>
-      </div>
-      <div class="filtro-group">
-        <label>Año</label>
-        <input type="number" id="fAnio" placeholder="2024" value="2024">
-      </div>
-      <div class="filtro-group" style="justify-content: flex-end;">
-        <button class="btn btn-primary" onclick="buscarCitas()">🔍 Buscar</button>
-        <button class="btn btn-warning" onclick="limpiarFiltros()" style="margin-top:5px;">Limpiar</button>
-      </div>
-    </div>
-
-    <table>
-      <thead>
-        <tr>
-          <th>Justificante</th>
-          <th>Titular</th>
-          <th>NIE</th>
-          <th>Oficina</th>
-          <th>Provincia</th>
-          <th>Fecha Cita</th>
-          <th>Hora</th>
-          <th>Mesa</th>
-          <th>Caducidad</th>
-          <th>Estado</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody id="tablaCitas">
-        <tr><td colspan="11" style="text-align:center;padding:20px;">Cargando...</td></tr>
-      </tbody>
-    </table>
-  </div>
+<body style="background:#0f172a; color:white; font-family:Arial; padding:50px;">
+  
+  <h1>🧪 Test de Conexión</h1>
+  
+  <button onclick="probarConexion()" style="padding:20px; font-size:18px; margin:10px;">
+    Probar Conexión Supabase
+  </button>
+  
+  <button onclick="probarLogin()" style="padding:20px; font-size:18px; margin:10px;">
+    Probar Login
+  </button>
+  
+  <hr>
+  
+  <h2>Resultados:</h2>
+  <pre id="resultados" style="background:#1e293b; padding:20px; border-radius:10px; min-height:200px;">
+Esperando...
+  </pre>
 
   <script>
-    // ==================== CONFIGURACIÓN ====================
     const SUPABASE_URL = 'https://mburmzxabmrvkehlstxk.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1idXJtenhhYm1ydmtlaGxzdHhrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5MTk2NDAsImV4cCI6MjA5NTQ5NTY0MH0.9ivUMmRL0EfybZb_Iszx7kxvJfFyVi7whlgQCN-_YzI';
     
-    // ⚠️ CORREGIDO: window.supabase
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    
+    const resultados = document.getElementById('resultados');
 
-    let sesionActiva = false;
-
-    // ==================== LOGIN ====================
-    async function login() {
-      const email = document.getElementById('email').value;
-      const password = document.getElementById('password').value;
-
-      console.log('🔐 Intentando login:', email);
-
-      const { data, error } = await supabase
-        .from('admins')
-        .select()
-        .eq('email', email)
-        .single();
-
-      console.log('📦 Respuesta:', data, error);
-
-      if (data && data.password_hash === password) {
-        sesionActiva = true;
-        document.getElementById('login').style.display = 'none';
-        document.getElementById('dashboard').style.display = 'block';
-        document.getElementById('errorMsg').style.display = 'none';
-        cargarCitas();
-        cargarEstadisticas();
-      } else {
-        document.getElementById('errorMsg').style.display = 'block';
-        console.log('❌ Error:', error || 'Contraseña incorrecta');
-      }
+    function log(msg) {
+      resultados.textContent += '\n' + msg;
+      console.log(msg);
     }
 
-    // Enter para login
-    document.addEventListener('keypress', function(e) {
-      if (e.key === 'Enter' && !sesionActiva) {
-        login();
-      }
-    });
-
-    function logout() {
-      sesionActiva = false;
-      document.getElementById('login').style.display = 'block';
-      document.getElementById('dashboard').style.display = 'none';
-    }
-
-    // ==================== CARGAR CITAS ====================
-    async function cargarCitas(filtros = {}) {
-      let query = supabase
-        .from('citas')
-        .select('*')
-        .order('fecha_creacion', { ascending: false });
-
-      if (filtros.provincia) query = query.ilike('provincia', `%${filtros.provincia}%`);
-      if (filtros.fechaDesde) query = query.gte('fecha_cita', filtros.fechaDesde);
-      if (filtros.fechaHasta) query = query.lte('fecha_cita', filtros.fechaHasta);
-      if (filtros.estado) query = query.eq('estado', filtros.estado);
-      if (filtros.nie) query = query.ilike('nie', `%${filtros.nie}%`);
-      if (filtros.titular) query = query.ilike('titular', `%${filtros.titular}%`);
-
-      const { data, error } = await query;
-
-      if (data && data.length > 0) {
-        renderTabla(data);
-      } else {
-        document.getElementById('tablaCitas').innerHTML = 
-          '<tr><td colspan="11" style="text-align:center;padding:40px;">📭 No hay citas</td></tr>';
-      }
-    }
-
-    function renderTabla(citas) {
-      const tbody = document.getElementById('tablaCitas');
-      tbody.innerHTML = citas.map(c => `
-        <tr>
-          <td><strong>${c.justificante || 'N/A'}</strong></td>
-          <td>${c.titular || 'N/A'}</td>
-          <td>${c.nie || 'N/A'}</td>
-          <td>${c.oficina || 'N/A'}</td>
-          <td>${c.provincia || 'N/A'}</td>
-          <td>${c.fecha_cita || 'N/A'}</td>
-          <td>${c.hora_cita || 'N/A'}</td>
-          <td>${c.mesa || '-'}</td>
-          <td>${c.caducidad || '-'}</td>
-          <td><span class="badge badge-${c.estado || 'pendiente'}">${c.estado || 'pendiente'}</span></td>
-          <td>
-            ${c.estado === 'pendiente' ? 
-              `<button class="btn btn-success btn-sm" onclick="cambiarEstado('${c.id}', 'completada')">✅</button>` : 
-              `<button class="btn btn-warning btn-sm" onclick="cambiarEstado('${c.id}', 'pendiente')">🔄</button>`
-            }
-          </td>
-        </tr>
-      `).join('');
-    }
-
-    async function cambiarEstado(id, estado) {
-      await supabase.from('citas').update({ estado }).eq('id', id);
-      buscarCitas();
-      cargarEstadisticas();
-    }
-
-    async function cargarEstadisticas() {
-      const { data } = await supabase.from('citas').select('estado');
+    async function probarConexion() {
+      resultados.textContent = '🔍 Probando conexión...';
       
-      if (data) {
-        document.getElementById('totalCitas').textContent = data.length;
-        document.getElementById('pendientes').textContent = 
-          data.filter(c => c.estado === 'pendiente').length;
-        document.getElementById('completadas').textContent = 
-          data.filter(c => c.estado === 'completada').length;
+      try {
+        log('1. Verificando Supabase client...');
+        log('   Cliente creado: ' + (supabase ? '✅' : '❌'));
+        
+        log('2. Probando consulta a admins...');
+        const { data, error } = await supabase
+          .from('admins')
+          .select('*');
+        
+        if (error) {
+          log('   ❌ Error: ' + error.message);
+          log('   Detalles: ' + JSON.stringify(error));
+        } else {
+          log('   ✅ Consulta exitosa');
+          log('   Datos: ' + JSON.stringify(data));
+          log('   Número de admins: ' + (data ? data.length : 0));
+        }
+      } catch (e) {
+        log('   ❌ Excepción: ' + e.message);
       }
     }
 
-    function buscarCitas() {
-      const filtros = {
-        provincia: document.getElementById('fProvincia').value,
-        fechaDesde: document.getElementById('fFechaDesde').value,
-        fechaHasta: document.getElementById('fFechaHasta').value,
-        estado: document.getElementById('fEstado').value,
-        nie: document.getElementById('fNIE').value,
-        titular: document.getElementById('fTitular').value,
-      };
-      cargarCitas(filtros);
+    async function probarLogin() {
+      resultados.textContent = '🔐 Probando login...';
+      
+      try {
+        log('1. Buscando admin@citas.com...');
+        const { data, error } = await supabase
+          .from('admins')
+          .select()
+          .eq('email', 'admin@citas.com')
+          .single();
+        
+        if (error) {
+          log('   ❌ Error: ' + error.message);
+          log('   Código: ' + error.code);
+          
+          if (error.code === 'PGRST116') {
+            log('   ⚠️ No existe admin@citas.com en la BD');
+            log('   SOLUCIÓN: Ejecuta el SQL en Supabase');
+          }
+        } else if (data) {
+          log('   ✅ Admin encontrado');
+          log('   Email: ' + data.email);
+          log('   Password hash: ' + data.password_hash);
+          
+          if (data.password_hash === 'admin') {
+            log('   ✅ Contraseña correcta: admin');
+            log('   🎉 LOGIN EXITOSO');
+          } else {
+            log('   ❌ Contraseña incorrecta');
+            log('   Esperado: admin');
+            log('   Actual: ' + data.password_hash);
+          }
+        } else {
+          log('   ❌ No se encontró ningún admin');
+        }
+      } catch (e) {
+        log('   ❌ Excepción: ' + e.message);
+      }
     }
 
-    function limpiarFiltros() {
-      document.querySelectorAll('.filtros input, .filtros select').forEach(el => el.value = '');
-      document.getElementById('fAnio').value = '2024';
-      cargarCitas();
-    }
+    // Auto-ejecutar al cargar
+    window.onload = function() {
+      log('🚀 Página cargada');
+      log('Supabase URL: ' + SUPABASE_URL);
+      log('Cliente: ' + (typeof supabase !== 'undefined' ? '✅ Listo' : '❌ Error'));
+    };
   </script>
 </body>
 </html>
