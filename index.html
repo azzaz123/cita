@@ -154,29 +154,12 @@
       background: #0f172a;
       color: #e2e8f0;
     }
-    
-    .modal {
+
+    .error-msg {
+      color: #ef4444;
+      text-align: center;
+      margin-top: 10px;
       display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0,0,0,0.8);
-      justify-content: center;
-      align-items: center;
-    }
-    
-    .modal.active {
-      display: flex;
-    }
-    
-    .modal-content {
-      background: #1e293b;
-      padding: 30px;
-      border-radius: 10px;
-      max-width: 600px;
-      width: 90%;
     }
   </style>
 </head>
@@ -185,10 +168,11 @@
   <div id="login" class="login-form">
     <h2 style="color: #f59e0b; text-align: center;">🔐 Admin - Citas Extranjería</h2>
     <input type="email" id="email" placeholder="Email" value="admin@citas.com">
-    <input type="password" id="password" placeholder="Contraseña">
+    <input type="password" id="password" placeholder="Contraseña" value="admin">
     <button class="btn btn-primary" onclick="login()" style="width:100%; margin-top:10px;">
       Entrar
     </button>
+    <p id="errorMsg" class="error-msg">❌ Credenciales incorrectas</p>
   </div>
 
   <!-- DASHBOARD -->
@@ -286,21 +270,28 @@
           <th>Acciones</th>
         </tr>
       </thead>
-      <tbody id="tablaCitas"></tbody>
+      <tbody id="tablaCitas">
+        <tr><td colspan="11" style="text-align:center;padding:20px;">Cargando...</td></tr>
+      </tbody>
     </table>
   </div>
 
   <script>
+    // ==================== CONFIGURACIÓN ====================
     const SUPABASE_URL = 'https://mburmzxabmrvkehlstxk.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1idXJtenhhYm1ydmtlaGxzdHhrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5MTk2NDAsImV4cCI6MjA5NTQ5NTY0MH0.9ivUMmRL0EfybZb_Iszx7kxvJfFyVi7whlgQCN-_YzI';
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    
+    // ⚠️ CORREGIDO: window.supabase
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     let sesionActiva = false;
 
-    // Login
+    // ==================== LOGIN ====================
     async function login() {
       const email = document.getElementById('email').value;
       const password = document.getElementById('password').value;
+
+      console.log('🔐 Intentando login:', email);
 
       const { data, error } = await supabase
         .from('admins')
@@ -308,16 +299,27 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         .eq('email', email)
         .single();
 
+      console.log('📦 Respuesta:', data, error);
+
       if (data && data.password_hash === password) {
         sesionActiva = true;
         document.getElementById('login').style.display = 'none';
         document.getElementById('dashboard').style.display = 'block';
+        document.getElementById('errorMsg').style.display = 'none';
         cargarCitas();
         cargarEstadisticas();
       } else {
-        alert('Credenciales inválidas');
+        document.getElementById('errorMsg').style.display = 'block';
+        console.log('❌ Error:', error || 'Contraseña incorrecta');
       }
     }
+
+    // Enter para login
+    document.addEventListener('keypress', function(e) {
+      if (e.key === 'Enter' && !sesionActiva) {
+        login();
+      }
+    });
 
     function logout() {
       sesionActiva = false;
@@ -325,7 +327,7 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
       document.getElementById('dashboard').style.display = 'none';
     }
 
-    // Cargar citas
+    // ==================== CARGAR CITAS ====================
     async function cargarCitas(filtros = {}) {
       let query = supabase
         .from('citas')
@@ -341,8 +343,11 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
       const { data, error } = await query;
 
-      if (data) {
+      if (data && data.length > 0) {
         renderTabla(data);
+      } else {
+        document.getElementById('tablaCitas').innerHTML = 
+          '<tr><td colspan="11" style="text-align:center;padding:40px;">📭 No hay citas</td></tr>';
       }
     }
 
@@ -350,18 +355,21 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
       const tbody = document.getElementById('tablaCitas');
       tbody.innerHTML = citas.map(c => `
         <tr>
-          <td><strong>${c.justificante}</strong></td>
-          <td>${c.titular}</td>
-          <td>${c.nie}</td>
-          <td>${c.oficina}</td>
-          <td>${c.provincia}</td>
-          <td>${c.fecha_cita}</td>
-          <td>${c.hora_cita}</td>
+          <td><strong>${c.justificante || 'N/A'}</strong></td>
+          <td>${c.titular || 'N/A'}</td>
+          <td>${c.nie || 'N/A'}</td>
+          <td>${c.oficina || 'N/A'}</td>
+          <td>${c.provincia || 'N/A'}</td>
+          <td>${c.fecha_cita || 'N/A'}</td>
+          <td>${c.hora_cita || 'N/A'}</td>
           <td>${c.mesa || '-'}</td>
           <td>${c.caducidad || '-'}</td>
-          <td><span class="badge badge-${c.estado}">${c.estado}</span></td>
+          <td><span class="badge badge-${c.estado || 'pendiente'}">${c.estado || 'pendiente'}</span></td>
           <td>
-            <button class="btn btn-success btn-sm" onclick="cambiarEstado('${c.id}', 'completada')">✓</button>
+            ${c.estado === 'pendiente' ? 
+              `<button class="btn btn-success btn-sm" onclick="cambiarEstado('${c.id}', 'completada')">✅</button>` : 
+              `<button class="btn btn-warning btn-sm" onclick="cambiarEstado('${c.id}', 'pendiente')">🔄</button>`
+            }
           </td>
         </tr>
       `).join('');
@@ -374,7 +382,7 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     }
 
     async function cargarEstadisticas() {
-      const { data, error } = await supabase.from('citas').select('estado');
+      const { data } = await supabase.from('citas').select('estado');
       
       if (data) {
         document.getElementById('totalCitas').textContent = data.length;
@@ -399,6 +407,7 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     function limpiarFiltros() {
       document.querySelectorAll('.filtros input, .filtros select').forEach(el => el.value = '');
+      document.getElementById('fAnio').value = '2024';
       cargarCitas();
     }
   </script>
