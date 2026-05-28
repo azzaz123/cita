@@ -293,7 +293,7 @@
   <script>
     const SUPABASE_URL = 'https://mburmzxabmrvkehlstxk.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1idXJtenhhYm1ydmtlaGxzdHhrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5MTk2NDAsImV4cCI6MjA5NTQ5NTY0MH0.9ivUMmRL0EfybZb_Iszx7kxvJfFyVi7whlgQCN-_YzI';
-    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     let sesionActiva = false;
 
